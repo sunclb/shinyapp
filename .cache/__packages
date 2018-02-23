@@ -1,0 +1,9 @@
+base
+ggplot2
+MASS
+lattice
+caret
+plotly
+bindrcpp
+slidify
+webshot

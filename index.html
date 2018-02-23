@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pitch presentation of Tooth Growth Study App</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Pitch presentation of Tooth Growth Study App">
+  <meta name="author" content="Sun Huiyuan">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Pitch presentation of Tooth Growth Study App</h1>
+    <h2></h2>
+    <p>Sun Huiyuan<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Objective</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>This is the pitch presentation of the app I created to show the study of The Effect of Vitamin C on Tooth Growth in Guinea Pigs. The datasets used is ToothGrowth data from datasets library. And in this presentation, I will enclose the code I made the app and the link to the app</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2>Functions of App</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li>Available options are listed on the left pannel and main plots and info will show on the right pannel</li>
+<li>You can choose whether to show Regression Line, Confidence Interval or Regression line formular</li>
+<li>Selection of types of supplyments are also available on the left pannel</li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>Code</h2>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">library(shiny)
+library(datasets)
+library(ggplot2)
+library(plotly)
+ui&lt;-fluidPage(
+
+  # Application title
+  titlePanel(&quot;The Effect of Vitamin C on Tooth Growth in Guinea Pigs&quot;),
+
+  # Sidebar with a slider input for number of bins 
+  sidebarLayout(
+    sidebarPanel(
+      checkboxInput(inputId = &quot;RL&quot;,
+                    label = strong(&quot;Show Regression Line&quot;),
+                    value = FALSE),
+      checkboxInput(inputId = &quot;CI&quot;,
+                    label = strong(&quot;Show Confidence Interval&quot;),
+                    value = FALSE),
+      checkboxInput(inputId = &quot;FM&quot;,
+                    label = strong(&quot;Show Regression Line Formular&quot;),
+                    value = FALSE),
+      hr(),
+
+      checkboxGroupInput(inputId = &quot;SP&quot;,&quot;Supplyments:&quot;,
+                    choices = c(&quot;VC&quot;=&quot;VC&quot;,&quot;OJ&quot;=&quot;OJ&quot;),
+                    selected = c(&quot;VC&quot;,&quot;OJ&quot;)
+      )
+    ),
+
+    # Show a plot of the generated distribution
+    mainPanel(
+
+      plotlyOutput(&quot;Plot&quot;),
+      textOutput(&quot;text1&quot;),  
+      textOutput(&quot;text2&quot;) 
+    )
+  )
+)
+server&lt;-function(input, output) {
+   datatb&lt;-data.frame(ToothGrowth)
+
+  output$Plot &lt;- renderPlotly({
+    filterdata&lt;-data.frame(len=numeric(),supp=factor(levels=c(&quot;OJ&quot;,&quot;VC&quot;)),dose=numeric())
+    if(&quot;VC&quot; %in% input$SP){
+      filterdata&lt;-rbind(filterdata,datatb[datatb$supp==&quot;VC&quot;,])
+    }
+    if(&quot;OJ&quot; %in% input$SP){
+      filterdata&lt;-rbind(filterdata,datatb[datatb$supp==&quot;OJ&quot;,])
+    }
+
+    p&lt;-plot_ly(data=filterdata,x=~dose,y=~len)%&gt;%
+      add_markers(color=~supp,colors=c(&quot;blue&quot;,&quot;red&quot;))%&gt;%
+      layout(title=&quot;Tooth Growth Chart&quot;,
+             yaxis=list(title=&quot;Dose level&quot;,font=t),
+             xaxis=list(title=&quot;Tooth Length&quot;,font=t))
+
+    if(input$RL){
+      if(&quot;VC&quot; %in% input$SP){
+        fitVC&lt;-lm(len~dose,datatb[datatb$supp==&quot;VC&quot;,])
+        predVC&lt;-predict(fitVC,datatb[datatb$supp==&quot;VC&quot;,],interval=&quot;confidence&quot;)
+        predVC&lt;-data.frame(predVC)
+        p&lt;-add_lines(p,x=~datatb[datatb$supp==&quot;VC&quot;,3],y=~predVC$fit,color=~as.factor(&quot;VC&quot;),
+                      name=&quot;VC supplyment Fitted line&quot;,showlegend=FALSE)
+      }
+      if(&quot;OJ&quot; %in% input$SP){
+        fitOJ&lt;-lm(len~dose,datatb[datatb$supp==&quot;OJ&quot;,])
+        predOJ&lt;-predict(fitOJ,datatb[datatb$supp==&quot;OJ&quot;,],interval=&quot;confidence&quot;)
+        predOJ&lt;-data.frame(predOJ)
+        p&lt;-add_lines(p,x=~datatb[datatb$supp==&quot;OJ&quot;,3],y=~predOJ$fit,color=~as.factor(&quot;OJ&quot;),
+                      name=&quot;OJ supplyment Fitted line&quot;,showlegend=FALSE)
+      }
+    }
+
+    if(input$CI){
+      if(&quot;VC&quot; %in% input$SP){
+        fitVC&lt;-lm(len~dose,datatb[datatb$supp==&quot;VC&quot;,])
+        predVC&lt;-predict(fitVC,datatb[datatb$supp==&quot;VC&quot;,],interval=&quot;confidence&quot;)
+        predVC&lt;-data.frame(predVC)
+        p&lt;-add_ribbons(p,x=~datatb[datatb$supp==&quot;VC&quot;,3],ymin=predVC$lwr,
+                       ymax = predVC$upr,opacity=0.4,inherit = FALSE,
+                       color=~as.factor(&quot;VC&quot;),showlegend=FALSE)
+      }
+      if(&quot;OJ&quot; %in% input$SP){
+        fitOJ&lt;-lm(len~dose,datatb[datatb$supp==&quot;OJ&quot;,])
+        predOJ&lt;-predict(fitOJ,datatb[datatb$supp==&quot;OJ&quot;,],interval=&quot;confidence&quot;)
+        predOJ&lt;-data.frame(predOJ)
+        p&lt;-add_ribbons(p,x=~datatb[datatb$supp==&quot;OJ&quot;,3],ymin=predOJ$lwr,
+                       ymax = predOJ$upr,opacity=0.4,inherit=FALSE,
+                       color=~as.factor(&quot;OJ&quot;),showlegend=FALSE)
+      }
+    }
+    p
+
+  })
+  output$text1&lt;-renderText({
+    if(input$FM){
+      if(&quot;VC&quot; %in% input$SP){
+        fitVC&lt;-lm(len~dose,datatb[datatb$supp==&quot;VC&quot;,])
+        paste0(&quot;Supplyment VC fitted line formular is:&quot;
+                  ,round(fitVC$coefficients[1],2),&quot;+&quot;,round(fitVC$coefficients[2],2),
+                  &quot;*Dose level&quot;)
+      }
+    }
+  })
+  output$text2&lt;-renderText({
+    if(input$FM){
+
+      if(&quot;OJ&quot; %in% input$SP){
+        fitOJ&lt;-lm(len~dose,datatb[datatb$supp==&quot;OJ&quot;,])
+        paste0(&quot;Supplyment OJ fitted line formular is:&quot;
+                          ,round(fitOJ$coefficients[1],2),&quot;+&quot;,round(fitOJ$coefficients[2],2),
+                          &quot;*Dose level&quot;)
+      }
+
+    }
+
+  })
+
+
+}
+shinyApp(ui = ui, server = server)
+</code></pre>
+
+<pre><code>## Error in appshot.shiny.appobj(structure(list(httpHandler = function (req) : appshot of Shiny app objects is not yet supported.
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>Links and Thanks</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Links: <a href="https://sunclb.shinyapps.io/ToothGrowthStudy">https://sunclb.shinyapps.io/ToothGrowthStudy</a></p>
+
+<h2>Thanks</h2>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Objective'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Functions of App'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Code'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Links and Thanks'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
